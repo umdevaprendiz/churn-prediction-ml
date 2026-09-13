@@ -6,3 +6,6 @@ pytest
 matplotlib
 seaborn
 notebook
+fastapi
+uvicorn
+httpx
