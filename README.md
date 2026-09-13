@@ -38,8 +38,11 @@ data/generate_data.py   # gera o dataset sintético (data/churn.csv)
 src/data_prep.py         # limpeza e preparação (funções puras, testáveis)
 src/train.py              # treino, comparação de modelos e avaliação
 src/predict.py             # inferência em novos dados com o modelo salvo
+src/export_for_bi.py        # gera data/churn_scored.csv (dados + previsão do modelo)
 tests/test_data_prep.py    # testes unitários da limpeza/preparação
 models/                     # modelo treinado (.joblib), gerado localmente
+notebooks/eda.ipynb          # análise exploratória guiada (ver TASK_EDA.md)
+docs/powerbi_dashboard.png    # print do dashboard de negócio (ver TASK_POWERBI.md)
 ```
 
 ## Como rodar
@@ -80,10 +83,30 @@ sentido dado como as probabilidades foram construídas em
 `generate_data.py`. Com um dataset real, vale testar também Gradient
 Boosting (XGBoost/LightGBM) para comparação.
 
+## Análise Exploratória (EDA)
+
+Um notebook guiado ([`notebooks/eda.ipynb`](notebooks/eda.ipynb), roteiro
+completo em [`TASK_EDA.md`](TASK_EDA.md)) explora as distribuições,
+correlações e a taxa de churn por segmento — em andamento.
+
+## Dashboard no Power BI
+
+Além da EDA em Python, os dados (com a previsão do modelo incluída, via
+`src/export_for_bi.py` → `data/churn_scored.csv`) alimentam um dashboard
+de negócio no Power BI, com KPIs, gráficos por segmento e uma tabela de
+clientes de maior risco. Roteiro completo em
+[`TASK_POWERBI.md`](TASK_POWERBI.md).
+
+**Status: em andamento.** KPIs de Churn Real, Churn Previsto e Total de
+Clientes já implementados; Receita em Risco e a tabela de clientes de
+risco ainda pendentes.
+
+![Dashboard Power BI - em andamento](docs/powerbi_dashboard.png)
+
 ## Próximos passos possíveis
 
+- Terminar o KPI de Receita em Risco e a tabela de clientes de maior risco
+  no dashboard do Power BI.
 - Trocar o dataset sintético pelo Telco Customer Churn real do Kaggle.
 - Adicionar tuning de hiperparâmetros (`GridSearchCV`/`RandomizedSearchCV`).
 - Expor o modelo via uma API simples (FastAPI) para predição em tempo real.
-- Adicionar um notebook de EDA com visualizações das features mais
-  correlacionadas com o churn.
