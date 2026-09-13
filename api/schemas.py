@@ -1,8 +1,4 @@
-"""Formatos de entrada/saida da API (validados automaticamente pelo FastAPI).
-
-Isso ja esta pronto - nao faz parte do exercicio. O exercicio esta em
-api/main.py.
-"""
+"""Formatos de entrada/saida da API, validados automaticamente pelo FastAPI."""
 
 from __future__ import annotations
 

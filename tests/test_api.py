@@ -1,4 +1,4 @@
-"""Testes da API (api/main.py): nao devem ser alterados."""
+"""Testes da API definida em api/main.py."""
 
 from __future__ import annotations
 
