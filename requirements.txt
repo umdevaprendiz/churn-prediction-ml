@@ -3,3 +3,6 @@ numpy
 scikit-learn
 joblib
 pytest
+matplotlib
+seaborn
+notebook
