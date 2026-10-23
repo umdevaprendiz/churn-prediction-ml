@@ -7,8 +7,9 @@ Uso:
 from __future__ import annotations
 
 import joblib
+from sklearn.base import clone
 from sklearn.compose import ColumnTransformer
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
     accuracy_score,
@@ -18,7 +19,7 @@ from sklearn.metrics import (
     recall_score,
     roc_auc_score,
 )
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
@@ -38,17 +39,23 @@ def build_preprocessor() -> ColumnTransformer:
     )
 
 
-def build_candidates(preprocessor: ColumnTransformer) -> dict[str, Pipeline]:
+def build_candidates(preprocessor: ColumnTransformer | None = None) -> dict[str, Pipeline]:
+    """Um Pipeline por modelo, cada um com o seu proprio pre-processador.
+
+    Compartilhar a mesma instancia de `ColumnTransformer` entre pipelines faz
+    um sobrescrever o ajuste do outro; por isso cada candidato recebe um clone.
+    """
+    base = preprocessor if preprocessor is not None else build_preprocessor()
     return {
         "logistic_regression": Pipeline(
             [
-                ("preprocessor", preprocessor),
+                ("preprocessor", clone(base)),
                 ("model", LogisticRegression(max_iter=1000, random_state=RANDOM_STATE)),
             ]
         ),
         "random_forest": Pipeline(
             [
-                ("preprocessor", preprocessor),
+                ("preprocessor", clone(base)),
                 (
                     "model",
                     RandomForestClassifier(
@@ -57,7 +64,26 @@ def build_candidates(preprocessor: ColumnTransformer) -> dict[str, Pipeline]:
                 ),
             ]
         ),
+        "gradient_boosting": Pipeline(
+            [
+                ("preprocessor", clone(base)),
+                (
+                    "model",
+                    HistGradientBoostingClassifier(
+                        max_depth=3,
+                        learning_rate=0.05,
+                        max_iter=200,
+                        random_state=RANDOM_STATE,
+                    ),
+                ),
+            ]
+        ),
     }
+
+
+def split_data(X, y):
+    """Divisao treino/teste estratificada, compartilhada por train e evaluate."""
+    return train_test_split(X, y, test_size=0.2, stratify=y, random_state=RANDOM_STATE)
 
 
 def evaluate(pipeline: Pipeline, X_test, y_test) -> dict:
@@ -74,12 +100,9 @@ def evaluate(pipeline: Pipeline, X_test, y_test) -> dict:
 
 def main() -> None:
     X, y = prepare(DATA_PATH)
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, stratify=y, random_state=RANDOM_STATE
-    )
+    X_train, X_test, y_train, y_test = split_data(X, y)
 
-    preprocessor = build_preprocessor()
-    candidates = build_candidates(preprocessor)
+    candidates = build_candidates()
 
     results = {}
     fitted = {}
@@ -87,6 +110,11 @@ def main() -> None:
         pipeline.fit(X_train, y_train)
         fitted[name] = pipeline
         results[name] = evaluate(pipeline, X_test, y_test)
+        cv_auc = cross_val_score(
+            clone(pipeline), X_train, y_train, cv=5, scoring="roc_auc"
+        )
+        results[name]["cv_roc_auc_mean"] = cv_auc.mean()
+        results[name]["cv_roc_auc_std"] = cv_auc.std()
 
     print("=== Comparacao de modelos ===")
     for name, metrics in results.items():

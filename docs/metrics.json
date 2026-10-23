@@ -1,0 +1,55 @@
+{
+  "best_model": "logistic_regression",
+  "optimized_threshold": 0.3191132364392828,
+  "models": {
+    "logistic_regression": {
+      "accuracy": 0.7583333333333333,
+      "precision": 0.6390532544378699,
+      "recall": 0.5625,
+      "f1": 0.5983379501385041,
+      "roc_auc": 0.8035130718954249,
+      "avg_precision": 0.6337205418504813
+    },
+    "random_forest": {
+      "accuracy": 0.7366666666666667,
+      "precision": 0.6180555555555556,
+      "recall": 0.4635416666666667,
+      "f1": 0.5297619047619048,
+      "roc_auc": 0.7813138276143791,
+      "avg_precision": 0.5855283133446961
+    },
+    "gradient_boosting": {
+      "accuracy": 0.7366666666666667,
+      "precision": 0.60625,
+      "recall": 0.5052083333333334,
+      "f1": 0.5511363636363636,
+      "roc_auc": 0.7795521854575165,
+      "avg_precision": 0.5965568701011825
+    }
+  },
+  "threshold_comparison": {
+    "0.50": {
+      "precision": 0.6390532544378699,
+      "recall": 0.5625,
+      "f1": 0.5983379501385041
+    },
+    "0.32": {
+      "precision": 0.5378787878787878,
+      "recall": 0.7395833333333334,
+      "f1": 0.6228070175438597
+    }
+  },
+  "permutation_importance": {
+    "contract_type": 0.1867,
+    "tenure_months": 0.0648,
+    "num_support_calls": 0.0191,
+    "monthly_charges": 0.0098,
+    "payment_method": 0.0091,
+    "tech_support": 0.0047,
+    "has_dependents": 0.0033,
+    "total_charges": 0.0018,
+    "internet_service": 0.0009,
+    "senior_citizen": 0.0005
+  },
+  "top_3_deciles_capture_of_churn": 0.5885416666666666
+}

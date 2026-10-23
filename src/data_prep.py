@@ -9,6 +9,7 @@ from __future__ import annotations
 import pandas as pd
 
 TARGET_COLUMN = "churn"
+DATA_PATH_DEFAULT = "data/churn.csv"
 
 NUMERIC_FEATURES = [
     "tenure_months",

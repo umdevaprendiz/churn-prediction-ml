@@ -85,29 +85,80 @@ Customer Churn) é possível sem mudar o pipeline — só ajustar as colunas em
 - **Pré-processamento**: `StandardScaler` nas features numéricas e
   `OneHotEncoder` nas categóricas, dentro de um `ColumnTransformer` (sem
   vazamento de dados entre treino/teste).
-- **Modelos comparados**: Regressão Logística e Random Forest, ambos dentro
-  de um `Pipeline` do scikit-learn.
+- **Modelos comparados**: Regressão Logística, Random Forest e Gradient
+  Boosting (`HistGradientBoostingClassifier`), todos dentro de um `Pipeline`
+  do scikit-learn, cada um com o seu próprio pré-processador.
 - **Métricas**: accuracy, precision, recall, F1 e ROC-AUC — não só
   accuracy, já que o problema é moderadamente desbalanceado (~32% churn).
+  Também há ROC-AUC com validação cruzada (5 folds) para checar estabilidade.
 - **Seleção do modelo**: o modelo com maior ROC-AUC no conjunto de teste é
   salvo em `models/churn_model.joblib`.
+- **Avaliação visual**: `python -m src.evaluate` gera os gráficos abaixo em
+  `docs/figures/` e as métricas em `docs/metrics.json`.
 
 ### Resultados (dataset sintético atual)
 
-| Modelo              | Accuracy | Precision | Recall | F1   | ROC-AUC |
-|----------------------|----------|-----------|--------|------|---------|
-| Regressão Logística  | 0.758    | 0.639     | 0.563  | 0.598| 0.804   |
-| Random Forest         | 0.737    | 0.618     | 0.464  | 0.530| 0.781   |
+| Modelo              | Accuracy | Precision | Recall | F1   | ROC-AUC (teste) | ROC-AUC (CV 5 folds) |
+|----------------------|----------|-----------|--------|------|-----------------|----------------------|
+| **Regressão Logística** | 0.758 | 0.639     | 0.563  | 0.598| **0.804**       | 0.822 ± 0.013        |
+| Random Forest         | 0.737    | 0.618     | 0.464  | 0.530| 0.781           | 0.805 ± 0.016        |
+| Gradient Boosting     | 0.737    | 0.606     | 0.505  | 0.551| 0.780           | 0.809 ± 0.021        |
 
 A Regressão Logística venceu neste caso — sinal de que a relação entre as
-features e o churn é majoritariamente linear no dataset gerado. Com um
-dataset real, vale testar também Gradient Boosting (XGBoost/LightGBM).
+features e o churn é majoritariamente linear no dataset gerado (o Gradient
+Boosting, mais flexível, não trouxe ganho). Com um dataset real, vale
+revisitar essa comparação.
+
+![Comparação dos modelos](docs/figures/model_comparison.png)
+
+### Para onde o modelo olha
+
+A importância por permutação (queda no ROC-AUC ao embaralhar cada variável)
+confirma o que a EDA já mostrava: **tipo de contrato** e **tempo de casa**
+dominam; ligações ao suporte vêm em seguida.
+
+![Importância das variáveis](docs/figures/feature_importance.png)
+
+### Limiar de decisão: precisão × recall
+
+Com o limiar padrão (0,50) o modelo deixa passar muitos churns (recall 56%).
+Em retenção, perder um cliente costuma custar mais do que fazer uma
+abordagem desnecessária, então o limiar foi otimizado para o F1 usando
+**validação cruzada só no treino** (sem olhar o teste): **0,32**. Resultado
+no teste: recall sobe de 56% para **74%**, ao custo de precisão menor (64% → 54%).
+
+![Matriz de confusão](docs/figures/confusion_matrix.png)
+![Análise de limiar](docs/figures/threshold_analysis.png)
+
+### Curvas ROC, calibração e lift
+
+As probabilidades são razoavelmente calibradas e ordenam bem o risco: os **3 decis de
+maior risco concentram 59% de todos os churns** do conjunto de teste
+(taxa real de 73% no decil mais arriscado contra 3% no mais seguro).
+
+![Curvas ROC e PR](docs/figures/roc_pr_curves.png)
+![Calibração e lift](docs/figures/calibration_lift.png)
+![Distribuição dos scores](docs/figures/score_distribution.png)
 
 ## Análise Exploratória (EDA)
 
-Notebook guiado ([`notebooks/eda.ipynb`](notebooks/eda.ipynb), roteiro
-completo em [`TASK_EDA.md`](TASK_EDA.md)) cobrindo distribuições,
-correlações e taxa de churn por segmento.
+Notebook completo ([`notebooks/eda.ipynb`](notebooks/eda.ipynb), roteiro
+original em [`TASK_EDA.md`](TASK_EDA.md)) cobrindo qualidade dos dados,
+distribuições, correlações, taxa de churn por segmento, cruzamentos e
+receita em risco — com gráficos já renderizados no próprio notebook.
+
+### Principais insights da EDA
+
+1. **Contrato mês a mês concentra o problema**: 48% de churn (1 ano: 15%;
+   2 anos: 7%) e 84% da receita mensal perdida.
+2. **Os primeiros 12 meses são críticos**: o churn cai de ~49% (0–5 meses)
+   para ~19% (60+ meses); mês a mês com menos de 1 ano de casa chega a 70%.
+3. **Suporte técnico ajuda, mas menos que o contrato**: 35% sem suporte vs 27%
+   com; mês a mês sem suporte é o perfil de maior risco (52%).
+4. **Muitas ligações ao suporte são um alerta**: de 24% (nenhuma) a 49% (5+).
+5. **Cheque eletrônico** tem churn de 40% vs ~29% em cartão/transferência.
+
+Cerca de **R$ 64,8 mil/mês (33% da receita)** está em clientes que cancelam.
 
 ## Dashboard no Power BI
 
@@ -127,6 +178,7 @@ pip install -r requirements.txt
 python data/generate_data.py       # gera data/churn.csv
 pytest -v                           # roda toda a suite de testes
 python -m src.train                  # treina, compara modelos e salva o melhor
+python -m src.evaluate                # gera gráficos e métricas em docs/
 python -m src.predict data/churn.csv  # exemplo de predição em lote
 uvicorn api.main:app --reload          # sobe a API em http://127.0.0.1:8000/docs
 ```
@@ -138,6 +190,8 @@ data/generate_data.py     # gera o dataset sintético (data/churn.csv)
 src/data_prep.py           # limpeza e preparação (funções puras, testáveis)
 src/train.py                # treino, comparação de modelos e avaliação
 src/predict.py                # inferência em lote com o modelo salvo
+src/evaluate.py                  # gráficos e métricas de avaliação (docs/figures)
+src/viz.py                         # estilo e paleta compartilhados dos gráficos
 src/export_for_bi.py           # gera data/churn_scored.csv (dados + previsão)
 api/main.py                      # API (FastAPI): /predict e /generate-report
 api/schemas.py                     # contratos de entrada/saída da API
@@ -145,6 +199,8 @@ tests/                               # testes automatizados (pipeline + API)
 notebooks/eda.ipynb                   # análise exploratória (ver TASK_EDA.md)
 models/                                 # modelo treinado (.joblib), local
 docs/powerbi_dashboard.png               # print do dashboard (ver TASK_POWERBI.md)
+docs/figures/ e docs/metrics.json         # gráficos e métricas geradas por src.evaluate
+RELATORIO_MELHORIAS.md                     # relatório das melhorias de gráficos e análises
 ```
 
 ## Status do projeto
@@ -152,7 +208,8 @@ docs/powerbi_dashboard.png               # print do dashboard (ver TASK_POWERBI.
 - [x] Pipeline de limpeza, features e treino de modelos
 - [x] Testes automatizados (pipeline + API)
 - [x] API de previsão (FastAPI)
-- [ ] Notebook de EDA (Partes 1 e 2 prontas; correlação e análise categórica em andamento)
+- [x] Notebook de EDA completo, com insights de negócio
+- [x] Avaliação visual do modelo (ROC, PR, calibração, lift, limiar, importância)
 - [ ] Dashboard Power BI (KPIs principais prontos; receita em risco e tabela de risco pendentes)
 - [ ] Dataset real (Kaggle Telco Customer Churn) no lugar do sintético
 
@@ -161,4 +218,5 @@ docs/powerbi_dashboard.png               # print do dashboard (ver TASK_POWERBI.
 - Terminar o dashboard do Power BI (receita em risco + tabela de clientes de risco).
 - Trocar o dataset sintético pelo Telco Customer Churn real do Kaggle.
 - Adicionar tuning de hiperparâmetros (`GridSearchCV`/`RandomizedSearchCV`).
+- Usar o limiar otimizado (0,32) também na API/`churn_scored.csv`.
 - Containerizar a API com Docker.
