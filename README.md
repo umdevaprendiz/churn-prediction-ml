@@ -48,7 +48,9 @@ script de exportação quanto pelo endpoint `/generate-report`).
 ## API
 
 Endpoints em [`api/main.py`](api/main.py), com testes automatizados em
-[`tests/test_api.py`](tests/test_api.py) (100% passando):
+[`tests/test_api.py`](tests/test_api.py) e
+[`tests/test_api_cases.py`](tests/test_api_cases.py) (perfis de cliente,
+entrada inválida, valores limite) — **115 testes no total, 100% passando**:
 
 | Método | Rota              | Descrição                                              |
 |--------|-------------------|---------------------------------------------------------|
@@ -140,6 +142,37 @@ maior risco concentram 59% de todos os churns** do conjunto de teste
 ![Calibração e lift](docs/figures/calibration_lift.png)
 ![Distribuição dos scores](docs/figures/score_distribution.png)
 
+### Casos de uso: do modelo para a decisão
+
+`python -m src.insights` gera gráficos que traduzem o modelo em ações (e
+`docs/insights.json` com os números por trás):
+
+**Perfis de cliente** — risco previsto para 7 personas, de "recém-chegado
+insatisfeito" (96%) a "cliente fiel" (1%); esses mesmos perfis são usados
+como casos de teste da API.
+
+![Perfis de cliente](docs/figures/customer_personas.png)
+
+**O que mexe no risco** — razões de chances da Regressão Logística e
+cenários "e se?" (mais tempo de casa, mais ligações ao suporte):
+
+![Razões de chances](docs/figures/odds_ratios.png)
+![Cenários e se](docs/figures/what_if_scenarios.png)
+
+**Retorno de uma campanha** — abordando só os 30% de maior risco já
+capturamos 59% dos churns; com premissas *ilustrativas* (R$ 60/contato, 30%
+de sucesso, 12 meses preservados) o benefício líquido máximo ocorre ao
+abordar ~50% da base:
+
+![Ganhos cumulativos](docs/figures/cumulative_gains.png)
+![Retorno da campanha](docs/figures/campaign_roi.png)
+
+**Robustez** — curva de aprendizado e estabilidade do ROC-AUC (5 folds × 3
+repetições): a Regressão Logística é a melhor *e* a mais estável.
+
+![Curva de aprendizado](docs/figures/learning_curve.png)
+![Estabilidade da validação cruzada](docs/figures/cv_stability.png)
+
 ## Análise Exploratória (EDA)
 
 Notebook completo ([`notebooks/eda.ipynb`](notebooks/eda.ipynb), roteiro
@@ -179,6 +212,7 @@ python data/generate_data.py       # gera data/churn.csv
 pytest -v                           # roda toda a suite de testes
 python -m src.train                  # treina, compara modelos e salva o melhor
 python -m src.evaluate                # gera gráficos e métricas em docs/
+python -m src.insights                # perfis, cenários, ganhos e retorno de campanha
 python -m src.predict data/churn.csv  # exemplo de predição em lote
 uvicorn api.main:app --reload          # sobe a API em http://127.0.0.1:8000/docs
 ```
@@ -191,6 +225,7 @@ src/data_prep.py           # limpeza e preparação (funções puras, testáveis
 src/train.py                # treino, comparação de modelos e avaliação
 src/predict.py                # inferência em lote com o modelo salvo
 src/evaluate.py                  # gráficos e métricas de avaliação (docs/figures)
+src/insights.py                  # personas, cenários "e se?", ganhos e ROI de campanha
 src/viz.py                         # estilo e paleta compartilhados dos gráficos
 src/export_for_bi.py           # gera data/churn_scored.csv (dados + previsão)
 api/main.py                      # API (FastAPI): /predict e /generate-report

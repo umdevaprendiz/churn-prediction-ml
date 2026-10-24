@@ -53,6 +53,29 @@ Paleta única e consistente em notebook e figuras: **azul = retido, laranja = ch
 - `README.md`: tabela de resultados com os 3 modelos e CV, seções com as figuras novas, "Principais insights da EDA", comandos e estrutura atualizados, status do projeto.
 - `RELATORIO_MELHORIAS.md`: este arquivo.
 
+## Rodada 2 — mais casos, testes e gráficos
+
+**Novos gráficos** (`python -m src.insights` → `docs/figures/` e `docs/insights.json`):
+`customer_personas` · `odds_ratios` · `what_if_scenarios` · `cumulative_gains` · `campaign_roi` ·
+`learning_curve` · `cv_stability`
+
+**Casos (personas):** 7 perfis de cliente em `src/insights.py` (`PERSONAS`), do "recém-chegado insatisfeito"
+(96% de risco) ao "cliente fiel" (1%). São usados tanto no gráfico quanto como casos de teste da API.
+
+**Testes: de 11 para 115.**
+
+| Arquivo | Foco |
+|---------|------|
+| `tests/test_generate_data.py` | colunas, reprodutibilidade por semente, nulos/duplicatas injetados, faixas, sinais plantados |
+| `tests/test_insights.py` | ganhos cumulativos, ROI da campanha, razões de chances, limiar, geração dos PNGs |
+| `tests/test_api_cases.py` | perfis de cliente, efeito isolado de cada fator, 422 por campo ausente/tipo errado, valores limite, rotas |
+| `tests/test_pipeline_cases.py` | `clean_data` (idempotência, mediana), `predict` em lote, exportação para BI, modelo vs. baseline |
+| `tests/conftest.py` | fixtures compartilhadas |
+
+**Achado documentado em teste:** a API não valida categorias nem faixas de valores (ex.: `contract_type="contrato_novo"`
+ou `tenure_months` negativo retornam 200). Hoje isso está só registrado em
+`test_unknown_category_does_not_crash_the_model`; endurecer o schema (`Literal`, `Field(ge=0)`) é um próximo passo.
+
 ## Arquivos
 
 **Novos:** `src/evaluate.py`, `src/viz.py`, `tests/test_train.py`, `docs/metrics.json`, `docs/figures/*.png` (7), `RELATORIO_MELHORIAS.md`

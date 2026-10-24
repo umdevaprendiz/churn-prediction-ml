@@ -1,0 +1,57 @@
+{
+  "personas": {
+    "Recém-chegado insatisfeito": 0.9562,
+    "Muitas ligações ao suporte": 0.9423,
+    "Mês a mês veterano": 0.4565,
+    "Plano básico sem internet": 0.1092,
+    "Contrato anual médio": 0.087,
+    "Família estável": 0.0119,
+    "Cliente fiel": 0.0053
+  },
+  "odds_ratios": {
+    "Tipo de contrato: 2 anos": 0.252,
+    "Tempo de casa (meses) (+1 desvio-padrão)": 0.509,
+    "Tipo de contrato: 1 ano": 0.727,
+    "Suporte técnico: sim": 0.74,
+    "Forma de pagamento: cartão": 0.776,
+    "Forma de pagamento: transferência": 0.804,
+    "Tem dependentes: sim": 0.916,
+    "Total cobrado (+1 desvio-padrão)": 0.929,
+    "Serviço de internet: fibra": 0.97,
+    "Serviço de internet: sem internet": 0.979,
+    "Forma de pagamento: cheque postal": 0.99,
+    "Serviço de internet: DSL": 1.059,
+    "Idoso: sim": 1.15,
+    "Mensalidade (+1 desvio-padrão)": 1.337,
+    "Ligações ao suporte (+1 desvio-padrão)": 1.377,
+    "Forma de pagamento: cheque eletrônico": 1.628,
+    "Tipo de contrato: mês a mês": 5.479
+  },
+  "gains_captured_at": {
+    "20%": 0.4375,
+    "30%": 0.5885416666666666
+  },
+  "campaign": {
+    "best_fraction": 0.505,
+    "best_net_benefit": 22643.568000000014,
+    "assumptions": {
+      "cost_per_contact": 60.0,
+      "success_rate": 0.3,
+      "months_saved": 12
+    }
+  },
+  "cv_roc_auc": {
+    "logistic_regression": {
+      "mean": 0.8168147240505454,
+      "std": 0.024020553140427642
+    },
+    "random_forest": {
+      "mean": 0.8023354390567086,
+      "std": 0.023970955953588752
+    },
+    "gradient_boosting": {
+      "mean": 0.8030841712652245,
+      "std": 0.025162214323212268
+    }
+  }
+}
